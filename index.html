@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Imposter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #111120;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f5;
+      --muted: #5a5a7a;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .screen {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Welcome ── */
+    .game-logo {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .game-title {
+      font-size: 4rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    .game-tagline {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 44px;
+    }
+
+    .rules-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      width: 100%;
+      margin-bottom: 28px;
+    }
+
+    .rules-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .rule {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 11px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: #b0b0cc;
+    }
+
+    .rule:last-child { margin-bottom: 0; }
+    .rule-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 15px 24px;
+      border-radius: 13px;
+      border: none;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.12s, transform 0.1s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      color: #666;
+      border: 1px solid var(--border);
+      margin-top: 10px;
+    }
+
+    .btn-reveal {
+      background: rgba(99,102,241,0.12);
+      color: #a5b4fc;
+      border: 2px solid rgba(99,102,241,0.28);
+    }
+
+    .btn-done-real {
+      background: rgba(16,185,129,0.1);
+      color: #34d399;
+      border: 2px solid rgba(16,185,129,0.22);
+    }
+
+    .btn-done-imp {
+      background: rgba(239,68,68,0.09);
+      color: #f87171;
+      border: 2px solid rgba(239,68,68,0.2);
+    }
+
+    /* ── Progress pips ── */
+    .pips {
+      display: flex;
+      gap: 9px;
+      margin-bottom: 30px;
+    }
+
+    .pip {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #1e1e30;
+      transition: all 0.3s;
+    }
+
+    .pip.done   { background: #4ade80; }
+    .pip.active { background: #a78bfa; transform: scale(1.45); }
+
+    /* ── Handoff ── */
+    .handoff-emoji { font-size: 3.2rem; margin-bottom: 18px; }
+
+    .handoff-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .handoff-player {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+    }
+
+    .handoff-sub {
+      color: var(--muted);
+      font-size: 0.87rem;
+      line-height: 1.6;
+      text-align: center;
+      margin-bottom: 38px;
+    }
+
+    /* ── Card flip ── */
+    .card-wrap {
+      width: 100%;
+      height: 255px;
+      perspective: 1100px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .card.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      text-align: center;
+    }
+
+    /* Card back */
+    .face-back {
+      background: linear-gradient(145deg, #1a1740, #2a1060);
+      border: 2px solid #4338ca;
+    }
+
+    .card-lock { font-size: 3rem; margin-bottom: 10px; opacity: 0.7; }
+
+    .card-back-hint {
+      color: #818cf8;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    /* Card front — real */
+    .face-real {
+      transform: rotateY(180deg);
+      background: linear-gradient(145deg, #042010, #064030);
+      border: 2px solid #059669;
+    }
+
+    /* Card front — imposter */
+    .face-imp {
+      transform: rotateY(180deg);
+      background: linear-gradient(145deg, #1a0505, #380808);
+      border: 2px solid #b91c1c;
+    }
+
+    .role-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 4px 13px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .face-real .role-badge {
+      background: rgba(16,185,129,0.18);
+      color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,0.28);
+    }
+
+    .face-imp .role-badge {
+      background: rgba(239,68,68,0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.28);
+    }
+
+    .card-word {
+      font-size: 2.9rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .face-real .card-word { color: #a7f3d0; }
+    .face-imp  .card-word { color: #fca5a5; font-size: 2rem; }
+
+    .card-sub {
+      font-size: 0.8rem;
+      line-height: 1.55;
+      opacity: 0.55;
+    }
+
+    .face-real .card-sub { color: #a7f3d0; }
+    .face-imp  .card-sub { color: #fca5a5; }
+
+    .cat-pill {
+      margin-top: 14px;
+      padding: 9px 18px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.22);
+      border-radius: 12px;
+    }
+
+    .cat-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f87171;
+      opacity: 0.65;
+      margin-bottom: 3px;
+    }
+
+    .cat-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fca5a5;
+    }
+
+    /* ── Card screen header ── */
+    .card-screen-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ── Done screen ── */
+    .done-icon { font-size: 2.8rem; margin-bottom: 14px; }
+
+    .done-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .done-sub {
+      color: var(--muted);
+      font-size: 0.87rem;
+      margin-bottom: 36px;
+    }
+
+    .first-box {
+      width: 100%;
+      padding: 28px 24px;
+      background: linear-gradient(145deg, #18120a, #2a1e04);
+      border: 2px solid rgba(245,158,11,0.35);
+      border-radius: 20px;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .first-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #d97706;
+      margin-bottom: 8px;
+    }
+
+    .first-number {
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: #fbbf24;
+      line-height: 1;
+      text-shadow: 0 0 50px rgba(251,191,36,0.25);
+    }
+
+    .first-caption {
+      font-size: 0.9rem;
+      color: #fbbf24;
+      opacity: 0.6;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const WORDS = [
+      { word: "Guitar",      category: "Musical Instruments" },
+      { word: "Trumpet",     category: "Musical Instruments" },
+      { word: "Violin",      category: "Musical Instruments" },
+      { word: "Drums",       category: "Musical Instruments" },
+      { word: "Pizza",       category: "Food" },
+      { word: "Sushi",       category: "Food" },
+      { word: "Taco",        category: "Food" },
+      { word: "Croissant",   category: "Food" },
+      { word: "Ramen",       category: "Food" },
+      { word: "Shark",       category: "Ocean Animals" },
+      { word: "Dolphin",     category: "Ocean Animals" },
+      { word: "Octopus",     category: "Ocean Animals" },
+      { word: "Seahorse",    category: "Ocean Animals" },
+      { word: "Jellyfish",   category: "Ocean Animals" },
+      { word: "Basketball",  category: "Sports" },
+      { word: "Tennis",      category: "Sports" },
+      { word: "Volleyball",  category: "Sports" },
+      { word: "Badminton",   category: "Sports" },
+      { word: "Fencing",     category: "Sports" },
+      { word: "Paris",       category: "World Cities" },
+      { word: "Tokyo",       category: "World Cities" },
+      { word: "Cairo",       category: "World Cities" },
+      { word: "Sydney",      category: "World Cities" },
+      { word: "Rio",         category: "World Cities" },
+      { word: "Astronaut",   category: "Professions" },
+      { word: "Surgeon",     category: "Professions" },
+      { word: "Architect",   category: "Professions" },
+      { word: "Firefighter", category: "Professions" },
+      { word: "Blacksmith",  category: "Professions" },
+      { word: "Diamond",     category: "Gems & Minerals" },
+      { word: "Emerald",     category: "Gems & Minerals" },
+      { word: "Sapphire",    category: "Gems & Minerals" },
+      { word: "Amethyst",    category: "Gems & Minerals" },
+      { word: "Tornado",     category: "Weather Events" },
+      { word: "Blizzard",    category: "Weather Events" },
+      { word: "Hurricane",   category: "Weather Events" },
+      { word: "Hailstorm",   category: "Weather Events" },
+      { word: "Eagle",       category: "Birds" },
+      { word: "Flamingo",    category: "Birds" },
+      { word: "Toucan",      category: "Birds" },
+      { word: "Pelican",     category: "Birds" },
+      { word: "Volcano",     category: "Natural Wonders" },
+      { word: "Waterfall",   category: "Natural Wonders" },
+      { word: "Canyon",      category: "Natural Wonders" },
+      { word: "Glacier",     category: "Natural Wonders" },
+      { word: "Submarine",   category: "Vehicles" },
+      { word: "Helicopter",  category: "Vehicles" },
+      { word: "Hovercraft",  category: "Vehicles" },
+      { word: "Zeppelin",    category: "Vehicles" },
+      { word: "Telescope",   category: "Scientific Tools" },
+      { word: "Microscope",  category: "Scientific Tools" },
+      { word: "Compass",     category: "Scientific Tools" },
+      { word: "Centrifuge",  category: "Scientific Tools" },
+    ];
+
+    let g = {
+      phase: 'welcome',  // welcome | handoff | card | done
+      player: 0,         // 0-indexed
+      imposter: -1,      // 0-indexed player index
+      entry: null,       // { word, category }
+      flipped: false,
+      firstPlayer: -1,   // 0-indexed
+    };
+
+    const rand = n => Math.floor(Math.random() * n);
+
+    function startGame() {
+      g.imposter     = rand(4);
+      g.entry        = WORDS[rand(WORDS.length)];
+      g.player       = 0;
+      g.flipped      = false;
+      g.firstPlayer  = rand(4);
+      g.phase        = 'handoff';
+      render();
+    }
+
+    function readyToReveal() {
+      g.phase   = 'card';
+      g.flipped = false;
+      render();
+    }
+
+    function revealCard() {
+      g.flipped = true;
+      const card = document.getElementById('card-el');
+      if (card) card.classList.add('flipped');
+      const btnReveal = document.getElementById('btn-reveal');
+      const btnDone   = document.getElementById('btn-done');
+      if (btnReveal) btnReveal.style.display = 'none';
+      if (btnDone)   btnDone.style.display   = '';
+    }
+
+    function nextPlayer() {
+      g.player++;
+      g.flipped = false;
+      g.phase   = g.player >= 4 ? 'done' : 'handoff';
+      render();
+    }
+
+    function resetGame() {
+      g = { phase:'welcome', player:0, imposter:-1, entry:null, flipped:false, firstPlayer:-1 };
+      render();
+    }
+
+    /* ── Render helpers ── */
+
+    function pips() {
+      let h = '<div class="pips">';
+      for (let i = 0; i < 4; i++) {
+        const cls = i < g.player ? 'pip done' : i === g.player ? 'pip active' : 'pip';
+        h += `<div class="${cls}"></div>`;
+      }
+      return h + '</div>';
+    }
+
+    /* ── Screens ── */
+
+    function renderWelcome() {
+      return `
+        <div class="screen">
+          <div class="game-logo">Card Game</div>
+          <div class="game-title">Imposter</div>
+          <div class="game-tagline">4 players · 1 impostor · 1 secret word</div>
+          <div class="rules-box">
+            <div class="rules-label">How it works</div>
+            <div class="rule">
+              <span class="rule-icon">🃏</span>
+              <span>Pass this screen around. Each player sees their card privately, then hides it.</span>
+            </div>
+            <div class="rule">
+              <span class="rule-icon">🕵️</span>
+              <span>One player is the <b>Imposter</b>. They get a category hint but not the real word.</span>
+            </div>
+            <div class="rule">
+              <span class="rule-icon">💬</span>
+              <span>Take turns describing the word. The Imposter blends in — real players try to expose them.</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="startGame()">Deal Cards →</button>
+        </div>`;
+    }
+
+    function renderHandoff() {
+      const n = g.player + 1;
+      const msgs = [
+        'Hand the device to Player 1.',
+        'Hand the device to Player 2.',
+        'Hand the device to Player 3.',
+        'Hand the device to Player 4.',
+      ];
+      return `
+        <div class="screen">
+          ${pips()}
+          <div class="handoff-emoji">📱</div>
+          <div class="handoff-label">Next up</div>
+          <div class="handoff-player">Player ${n}</div>
+          <div class="handoff-sub">${msgs[g.player]}<br>Only Player ${n} should be looking.</div>
+          <button class="btn btn-primary" onclick="readyToReveal()">I'm Ready — Show My Card →</button>
+        </div>`;
+    }
+
+    function renderCardScreen() {
+      const isImp = g.player === g.imposter;
+
+      const frontClass = isImp ? 'face-imp' : 'face-real';
+      const cardFlipped = g.flipped ? 'flipped' : '';
+
+      let frontInner;
+      if (isImp) {
+        frontInner = `
+          <div class="role-badge">Imposter</div>
+          <div class="card-word">🕵️</div>
+          <div class="card-sub" style="opacity:0.8;font-size:0.95rem;font-weight:600;">You are the Imposter!</div>
+          <div class="cat-pill">
+            <div class="cat-label">Category hint</div>
+            <div class="cat-value">${g.entry.category}</div>
+          </div>`;
+      } else {
+        frontInner = `
+          <div class="role-badge">Real Player</div>
+          <div class="card-word">${g.entry.word}</div>
+          <div class="card-sub">You know the secret word.<br>Don't give it away!</div>`;
+      }
+
+      const doneLabel = g.player < 3
+        ? `Done — pass to Player ${g.player + 2} →`
+        : `Done — I'm the last player →`;
+
+      const doneCls  = isImp ? 'btn btn-done-imp' : 'btn btn-done-real';
+      const hideInit = g.flipped ? '' : 'style="display:none"';
+      const showInit = g.flipped ? 'style="display:none"' : '';
+
+      return `
+        <div class="screen">
+          ${pips()}
+          <div class="card-screen-label">Player ${g.player + 1}'s card</div>
+          <div class="card-wrap">
+            <div class="card ${cardFlipped}" id="card-el">
+              <div class="card-face face-back">
+                <div class="card-lock">🔒</div>
+                <div class="card-back-hint">Tap to reveal your card</div>
+              </div>
+              <div class="card-face ${frontClass}">
+                ${frontInner}
+              </div>
+            </div>
+          </div>
+          <button id="btn-reveal" class="btn btn-reveal" onclick="revealCard()" ${showInit}>Reveal My Card</button>
+          <button id="btn-done"   class="${doneCls}"      onclick="nextPlayer()"   ${hideInit}>${doneLabel}</button>
+        </div>`;
+    }
+
+    function renderDone() {
+      const fp = g.firstPlayer + 1;
+      return `
+        <div class="screen">
+          <div class="done-icon">✅</div>
+          <div class="done-title">Cards dealt!</div>
+          <div class="done-sub">Everyone knows their role. Time to play.</div>
+          <div class="first-box">
+            <div class="first-label">Goes first</div>
+            <div class="first-number">Player ${fp}</div>
+            <div class="first-caption">starts the discussion!</div>
+          </div>
+          <button class="btn btn-primary" onclick="startGame()">New Round →</button>
+          <button class="btn btn-ghost"   onclick="resetGame()">Back to Menu</button>
+        </div>`;
+    }
+
+    /* ── Main render ── */
+
+    function render() {
+      const app = document.getElementById('app');
+      switch (g.phase) {
+        case 'welcome': app.innerHTML = renderWelcome();     break;
+        case 'handoff': app.innerHTML = renderHandoff();     break;
+        case 'card':    app.innerHTML = renderCardScreen();  break;
+        case 'done':    app.innerHTML = renderDone();        break;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
